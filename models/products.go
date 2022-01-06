@@ -12,7 +12,7 @@ type Product struct {
 
 func GetAllProducts() []Product {
 	db := db.ConnectDB()
-	resultQuery, err := db.Query("select * from products")
+	resultQuery, err := db.Query("select * from products order by id asc")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -55,6 +55,18 @@ func CreateProduct(name, description string, price float64, amount int) {
 	defer db.Close()
 }
 
+func UpdateProduct(id int, name, description string, price float64, amount int) {
+	db := db.ConnectDB()
+
+	scriptUpdate, err := db.Prepare("update products set name=$2, description=$3, price=$4, amount=$5 where id=$1")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	scriptUpdate.Exec(id, name, description, price, amount)
+	defer db.Close()
+}
+
 func DeleteProcuct(id string) {
 	db := db.ConnectDB()
 
@@ -64,4 +76,33 @@ func DeleteProcuct(id string) {
 	}
 	scriptDelete.Exec(id)
 	defer db.Close()
+}
+
+func GetProduct(id string) Product {
+	db := db.ConnectDB()
+	result, err := db.Query("select * from products where id=$1", id)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	product := Product{}
+
+	for result.Next() {
+		var id, amount int
+		var name, description string
+		var price float64
+
+		err = result.Scan(&id, &name, &description, &price, &amount)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		product.Id = id
+		product.Name = name
+		product.Description = description
+		product.Price = price
+		product.Amount = amount
+	}
+	defer db.Close()
+	return product
 }
