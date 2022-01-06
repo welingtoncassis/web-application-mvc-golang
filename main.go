@@ -31,7 +31,7 @@ func connectDB() *sql.DB {
 	host := goDotEnvVariable("DB_HOST")
 	sslmode := goDotEnvVariable("DB_SSLMODE")
 
-	connectionString := "user=" + user + " dbname=" + dbName + " password=" + password + " host=" + host + "sslmode" + sslmode
+	connectionString := "user=" + user + " dbname=" + dbName + " password=" + password + " host=" + host + " sslmode=" + sslmode
 
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
@@ -41,6 +41,7 @@ func connectDB() *sql.DB {
 }
 
 type Product struct {
+	Id          int
 	Name        string
 	Description string
 	Price       float64
@@ -50,18 +51,40 @@ type Product struct {
 var temps = template.Must(template.ParseGlob("templates/*.html"))
 
 func main() {
-	db := connectDB()
-	defer db.Close()
 	http.HandleFunc("/", index)
 	http.ListenAndServe(":8000", nil)
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
-	products := []Product{
-		{"T-Shirt", "Black", 29.9, 10},
-		{"Short", "Blue", 19.9, 5},
-		{"Shoes", "Red", 89.9, 3},
+	db := connectDB()
+	resultQuery, err := db.Query("select * from products")
+	if err != nil {
+		panic(err.Error())
 	}
+
+	p := Product{}
+	products := []Product{}
+
+	for resultQuery.Next() {
+		var id, amount int
+		var name, description string
+		var price float64
+
+		err = resultQuery.Scan(&id, &name, &description, &price, &amount)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		p.Id = id
+		p.Name = name
+		p.Description = description
+		p.Price = price
+		p.Amount = amount
+
+		products = append(products, p)
+	}
+
 	// Parms: w(quem responde), index(html), valor passado para o html
 	temps.ExecuteTemplate(w, "Index", products)
+	defer db.Close()
 }
