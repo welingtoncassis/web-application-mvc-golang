@@ -11,7 +11,7 @@ import (
 var temps = template.Must(template.ParseGlob("templates/*.html"))
 
 func Index(w http.ResponseWriter, r *http.Request) {
-	allProducts := models.GetAll()
+	allProducts := models.GetAllProducts()
 	temps.ExecuteTemplate(w, "Index", allProducts)
 }
 
@@ -36,7 +36,13 @@ func Create(w http.ResponseWriter, r *http.Request) {
 			log.Println("Erro na conversão da quantidade: ", err)
 		}
 
-		models.Create(name, description, convertedPrice, convertedAmount)
+		models.CreateProduct(name, description, convertedPrice, convertedAmount)
 	}
+	http.Redirect(w, r, "/", 301)
+}
+
+func Delete(w http.ResponseWriter, r *http.Request) {
+	idProduct := r.URL.Query().Get("id")
+	models.DeleteProcuct(idProduct)
 	http.Redirect(w, r, "/", 301)
 }

@@ -10,7 +10,7 @@ type Product struct {
 	Amount      int
 }
 
-func GetAll() []Product {
+func GetAllProducts() []Product {
 	db := db.ConnectDB()
 	resultQuery, err := db.Query("select * from products")
 	if err != nil {
@@ -43,7 +43,7 @@ func GetAll() []Product {
 	return products
 }
 
-func Create(name, description string, price float64, amount int) {
+func CreateProduct(name, description string, price float64, amount int) {
 	db := db.ConnectDB()
 
 	scriptInsert, err := db.Prepare("insert into products(name, description, price, amount) values($1, $2, $3, $4)")
@@ -52,5 +52,16 @@ func Create(name, description string, price float64, amount int) {
 	}
 
 	scriptInsert.Exec(name, description, price, amount)
+	defer db.Close()
+}
+
+func DeleteProcuct(id string) {
+	db := db.ConnectDB()
+
+	scriptDelete, err := db.Prepare("delete from products where id=$1")
+	if err != nil {
+		panic(err.Error())
+	}
+	scriptDelete.Exec(id)
 	defer db.Close()
 }
